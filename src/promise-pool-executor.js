@@ -32,12 +32,21 @@ class PromisePoolExecutor extends EventEmitter {
   async process (callback) {
     this.validateInputs(callback)
 
-    for (const item of this.items) {
-      if (this.hasReachedConcurrencyLimit()) {
-        await this.processingSlot()
+    if (this.items.constructor.name === 'AsyncGenerator') {
+      for await (const item of this.items) {
+        if (this.hasReachedConcurrencyLimit()) {
+          await this.processingSlot()
+        }
+        this.handle(callback, item)
       }
+    } else {
+      for (const item of this.items) {
+        if (this.hasReachedConcurrencyLimit()) {
+          await this.processingSlot()
+        }
 
-      this.handle(callback, item)
+        this.handle(callback, item)
+      }
     }
 
     return this.drained()
@@ -59,7 +68,7 @@ class PromisePoolExecutor extends EventEmitter {
       throw new TypeError(`\`concurrency\` must be a number, 1 or up. Received \`${this.concurrency}\` (${typeof concurrency})`)
     }
 
-    if (!Array.isArray(this.items)) {
+    if (['AsyncGenerator', 'Array', 'Generator'].indexOf((this.items || []).constructor.name) === -1) {
       throw new TypeError(`\`items\` must be an array. Received \`${this.items}\` (${typeof this.items})`)
     }
   }
