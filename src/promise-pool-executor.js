@@ -37,7 +37,7 @@ class PromisePoolExecutor extends EventEmitter {
     }
 
     if (this.items.constructor.name === 'AsyncGeneratorFunction') {
-      for await (const item of this.items) {
+      for await (const item of this.items()) {
         if (this.hasReachedConcurrencyLimit()) {
           await this.processingSlot()
         }
