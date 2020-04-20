@@ -32,7 +32,11 @@ class PromisePoolExecutor extends EventEmitter {
   async process (callback) {
     this.validateInputs(callback)
 
-    if (this.items.constructor.name === 'AsyncGenerator') {
+    if (this.items.constructor.name === 'GeneratorFunction') {
+      this.items = this.items()
+    }
+
+    if (this.items.constructor.name === 'AsyncGeneratorFunction') {
       for await (const item of this.items) {
         if (this.hasReachedConcurrencyLimit()) {
           await this.processingSlot()
@@ -68,7 +72,7 @@ class PromisePoolExecutor extends EventEmitter {
       throw new TypeError(`\`concurrency\` must be a number, 1 or up. Received \`${this.concurrency}\` (${typeof concurrency})`)
     }
 
-    if (['AsyncGenerator', 'Array', 'Generator'].indexOf((this.items || []).constructor.name) === -1) {
+    if (['AsyncGeneratorFunction', 'Array', 'GeneratorFunction'].indexOf((this.items || []).constructor.name) === -1) {
       throw new TypeError(`\`items\` must be an array. Received \`${this.items}\` (${typeof this.items})`)
     }
   }
